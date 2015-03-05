@@ -7,14 +7,13 @@
 #include "command.h"
 
 extern const CMDSIZE = 15;
-extern string cmdline[CMDSIZE];
+extern char *cmdline; //[CMDSIZE];
 
 
 int main(int argc, char *argv[], char *envp[])
 {
 /*
  *	need parser
- *	for 1 line store each string into an array
  *
  */
  
