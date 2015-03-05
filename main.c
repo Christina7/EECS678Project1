@@ -11,7 +11,7 @@
 const LISTSIZE = 100; 
 extern const CMDSIZE = 1028;
 extern char *cmdline; //[CMDSIZE];
-int gener+ID, jobcount;
+int genertID, jobcount;
 
 
 /* A process is a single process.  */
@@ -27,16 +27,19 @@ typedef struct job
 
 
 /* The active jobs are linked into a list.  This is its head.   */
-int joblist[]
+int joblist[LISTSIZE];
 
+int getcmd()
+{
+};
 
-
-int main(int argc, char **argv, char **envp){
+void main(int argc, char **argv, char **envp)
+{
 	
 	
 	getcmd(); //needs to read in input and increment job count
 	while(jobcount > 0){
-		printf("[ --QUASH-- ]
+		printf("[ --QUASH-- ]");
 		//execute job i
 		jobcount -= 1;
 	}
