@@ -1,104 +1,45 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <string>
+#include <string.h>
+//#include <unistd.h>
+#include <dirent.h>
+#include <sys/wait.h>
 
-#include "command.h"
 
+//may not need extern
+
+const LISTSIZE = 100; 
 extern const CMDSIZE = 1028;
 extern char *cmdline; //[CMDSIZE];
+int gener+ID, jobcount;
 
 
-/*
-// A process is a single process
-typedef struct process{
-  //struct process *next;      // next process in pipeline 
-  char **argv;                //for exec 
-  pid_t pid;                   //process ID 
-  char completed;             //true if process has completed 
-  char stopped;               //true if process has stopped 
-  int status;                  //reported status value 
-} process;
-// A job is a pipeline of processes.  
-
-
-*/
-
-/*
+/* A process is a single process.  */
 typedef struct job
 {
-  struct job *next;           //next active job 
-  char *command;              //command line, used for messages 
-  process *first_process;     //list of processes in this job 
-  pid_t pgid;                 //process group ID 
-  char notified;              //true if user told about stopped job 
-  struct termios tmodes;      // saved terminal modes 
-  int stdin, stdout, stderr;  // standard i/o channels 
+  int id, argcount;
+  //char **argv;                /* for exec */
+  pid_t pid;                  /* process ID */
+  //char completed;             /* true if process has completed */
+  int running;
 } job;
 
-//The active jobs are linked into a list.  This is its head.   
-job *first_job = NULL;
-
-*/
 
 
-void parser(){
-	 fgets(cmdline, CMDSIZE, stdin);
-}
+/* The active jobs are linked into a list.  This is its head.   */
+int joblist[]
 
 
 
-
-int main(int argc, char *argv[], char *envp[])
-{
-/*
- *	need parser
- *
- */
- 
-
-
- 
- 
- /*	string word;
- 	char c;
- 	int i = 0;
-	printf("\n[QUASH >> ] ");
-	while((c != "\n") && (i < CMDSIZE)) {
-		c = getchar();
-		if (c == " "){
-			i++;
-		}
-		else if(c == "|"){
-			i++
-		}
-		else if(c == ">"){
-			i++;
-		}
-		else if(c == "<"){
-			i++
-		}
-		else{
-			strcat(cmdline[i], c);
-		}
-		
-		printf("[QUASH >> ] ");
+int main(int argc, char **argv, char **envp){
+	
+	
+	getcmd(); //needs to read in input and increment job count
+	while(jobcount > 0){
+		printf("[ --QUASH-- ]
+		//execute job i
+		jobcount -= 1;
 	}
-	printf("\n");
-	return 0;
- */
-
-/*
- *	interpreter for commands
- *
- */
-
-
-/*
- *	
- *	other
- *
- *	file type for file input is .sh
- *
- */
+	printf("Ending Quash \n");
+	exit(0);
 }
