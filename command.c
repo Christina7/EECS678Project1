@@ -2,7 +2,6 @@
 #include <fstream>
 
 #include "command.h"
-using namespace std;
 
 /*
  *	heres what im thinking either try to make a switch
