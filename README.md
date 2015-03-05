@@ -1,4 +1,4 @@
 # EECS678Project1
 Quash with simple commands
 
-test 2
+test 3
