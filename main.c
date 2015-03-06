@@ -8,12 +8,13 @@
 typedef int bool;
 #define true 1
 #define false 0
-//may not need extern
 
-const LISTSIZE = 100;
-const MAXARG = 10; 
-extern const CMDSIZE = 1028;
-extern char *cmdline; //[CMDSIZE];
+//may not need extern
+//const int generates error variably mod. at file scope
+#define LISTSIZE 100
+#define MAXARG 10
+#define CMDSIZE 1028
+char *cmdline; //[CMDSIZE];
 int generID, jobcount;
 
 
@@ -22,7 +23,7 @@ typedef struct Job
 {
     int id;
     int argcount;
- 	char *args[MAX_ARGS];
+ 	char *args[MAXARG];
     pid_t pid;                  /* process ID */
     int running;	//for background processes only
   	char * input;
@@ -40,28 +41,56 @@ void initJob(struct  Job* j)
 		//j->background = false;
 		j->running = false;
 		int i;
-		for(i = 0; i < MAX_ARGS; i++){
+		for(i = 0; i < MAXARG; i++){
 			j->args[i] = (char*) malloc(256);
 		}
 
 }
 
+void deallocJob(struct Job * j)
+{
 
-/* The active jobs are linked into a list.  This is its head.   */
+		int i; for(i = 0; i < MAXARG; i++){
+			free(j->args[i]);
+		}
+
+}
+
+//arrays of foreground and background jobs
 Job jobfore[LISTSIZE];
 Job jobback[LISTSIZE];
 
-
+void getcmd()
+{
+	//fgets(line, MAX_LENGTH, stdin);
+};
 
 int main(int argc, char **argv, char **envp){
 	
-	
+	int i; 
+	for( i = 0; i < LISTSIZE; i++)
+	{
+		initJob(&jobfore[i]);
+	}
+
+	for( i = 0; i < LISTSIZE; i++)
+	{
+		initJob(&jobback[i]);
+	}
+    printf(" It has been initialized.\n");
+	/*
 	getcmd(); //needs to read in input and increment job count
+	
 	while(jobcount > 0){
-		printf("[ --QUASH-- ]
+		printf("[ --QUASH-- ]");
 		//execute job i
 		jobcount -= 1;
 	}
 	printf("Ending Quash \n");
 	exit(0);
+	*/
 }
+
+
+
+
