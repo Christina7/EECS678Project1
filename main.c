@@ -99,6 +99,7 @@ void getcmd()
 		}
 		else{ //is not letter, puts it into job arg , need to check if | & > < 
 			strcpy(jobs[jobi].args[argi], cmd, sizeof(cmd)); //puts cmd into arg of current job 
+			jobs[jobi].argcount += 1;
 			argi += 1; //
 			cmd = NULL;	//reset cmd
 			
@@ -107,11 +108,36 @@ void getcmd()
 					jobs[jobi].bkgrd = true;	//current job is background job
 					break;
 				case "<":
+					curri += 1; //move to next char in cmdline and concat onto cmd
+					strncpy(currchar, cmdline + curri, 1);	//copy char into currchar
 					
+					while(currchar == " "){
+						curri += 1;
+						strncpy(currchar, cmdline + curri, 1);
+					}
+					
+					while((isAlpha(currchar)) || ((currchar != "&") && (currchar != "<") && (currchar != ">") && (currchar != "|") && (currchar != " ") && (currchar != "\n"))){
+						strcat(cmd, currchar, 1); //
+						curri += 1;
+						strncpy(currchar, cmdline + curri, 1);
+					}
+					strcpy(jobs[jobi].output, cmd, sizeof(cmd));
+					
+					//need to check if fails
+					if (strlen(jobs[currJob].output) == 0) {
+						perror ("Error opening input file\n");
+					}
+										
 					break;
 				case ">":
 					curri += 1; //move to next char in cmdline and concat onto cmd
 					strncpy(currchar, cmdline + curri, 1);	//copy char into currchar
+					
+					while(currchar == " "){
+						curri += 1;
+						strncpy(currchar, cmdline + curri, 1);
+					}
+					
 					while((isAlpha(currchar)) || ((currchar != "&") && (currchar != "<") && (currchar != ">") && (currchar != "|") && (currchar != " ") && (currchar != "\n"))){
 						strcat(cmd, currchar, 1); //
 						curri += 1;
@@ -119,8 +145,10 @@ void getcmd()
 					}
 					strcpy(jobs[jobi].input, cmd, sizeof(cmd));
 					
-					
 					//need to check if fails
+					if (strlen(jobs[currJob].input) == 0) {
+						perror ("Error opening input file\n");
+					}
 					
 					break;
 				case "|":
@@ -133,29 +161,90 @@ void getcmd()
 					jobi += 1;	//new job
 					break;
 				case " ":
-					argi += 1;	//new argument
+					curri += 1;	//skip space
 					break;
 				default :
-				
+					printf("Switch default at line 154 in getcmd \n check input \n");
 					break;
 			}
-			
-			
-			if(currchar == "&"){
-				
-			
-			
-			
-		}
 		
-	
-	
-	
-	
+
 	}
 	
 	jobcount += 1;
 };
+
+
+
+//-----------------------------------------------------------------------------------------------
+/* will execute all new jobs from getcmd  need to keep track of what index we left off on 
+void execute(){
+	int jobi = 0;
+	int argi = 0;
+	
+	while(jobcount > 0){
+		switch(jobs[jobi].args[argi]){
+			case "exit":
+				printf("Exiting quash");
+				exit(0);
+				break;
+				
+			case "quit":
+				printf("Exiting quash");
+				exit(0);
+				break;
+				
+			case "set":
+			
+				break;
+			
+			case "cd":
+				if (jobs[i].argcount < 2){
+					if(chdir(getenv("HOME")) < 0) {
+						printf("ERROR: changing director to home\n");
+						exit(1);
+					}
+				} 
+				else {
+					if(chdir(jobs[i].args[1]) < 0){
+						printf("ERROR: changing directory to %s\n", jobs[i].args[1]);
+						exit(1);
+					}
+				}			
+				break;
+			
+			case "jobs":
+			
+				break;
+			
+			default:
+				if ((jobs[jobi].input != NULL) || (jobs[jobi].input != NULL))
+			
+			
+			
+			
+			
+				break;
+		
+		}
+		
+		jobcount -= 1;	
+	}
+}
+*/
+
+//-----------------------------------------------------------------------------------------------
+
+// to test getcmd
+
+void printJobs(){
+    for (i = 0; i < jobcount; i++){
+    	printf("\n %s ", i);
+    	for (int k; k < job[i].argcount; k++){
+    		printf("%s ",job[i].args[k])
+    	}
+    }
+}
 
 
 
@@ -170,17 +259,23 @@ int main(int argc, char **argv, char **envp){
 	}
 
     printf(" It has been initialized.\n");
+    
+
 	
 	printf("[ --QUASH-- ]");
 	getcmd(); // gets first job needs to read in input and increment job count
 	
+	printJobs();
+	
+	
 	/*
-	while(jobcount > 0){
+	while(1){
+		//execute job i
+		
 		printf("[ --QUASH-- ]");
 		getcmd(); //gets next job
 		
-		//execute job i
-		jobcount -= 1;
+		//jobcount -= 1;
 		printf("\n");
 	}
 	printf("Ending Quash \n");
