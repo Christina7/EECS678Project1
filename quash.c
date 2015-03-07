@@ -9,7 +9,7 @@
 char * readCommand()
 {
 	char * command = (char * ) malloc(CMD_LENGTH + 1);
-	printf("quash>");
+	printf("quash> ");
 	fgets( command, CMD_LENGTH, stdin );
 	return command;				
 }
@@ -68,10 +68,12 @@ char getAbsolute(char ** argv, char ** envp)
 
 void runCommand(char * command, char **envp)
 {
+	char ** argv = getArgv( command );
 	if( strcmp( command, "\n" ) == 0 )
 		return;
-	char ** argv = getArgv( command );
-	if( access( argv[0], F_OK) != -1 )	
+	else if (strcmp( command , "exit") == 0 || strcmp( command , "quit") == 0)
+		exit(0);
+	else if( access( argv[0], F_OK) != -1 )	
 		runExec( argv, envp );
 	else if( getAbsolute( argv, envp ) )
 		runExec( argv, envp );
