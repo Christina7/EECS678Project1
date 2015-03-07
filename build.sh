@@ -1,3 +1,3 @@
 rm -f quash.exe
-gcc -g quash.c -o quash.exe
+gcc quash.c -o quash.exe
 
