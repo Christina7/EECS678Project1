@@ -16,14 +16,14 @@ char * readCommand()
 
 char ** getArgv( char * command )
 {
-	char * curArg = strtok(command, " \n");
+	char * curArg = strtok(command, "= \n");
 	char ** argv = (char**) malloc(ARG_LIMIT + 1);
 	int argv_index = 0;
 	while( curArg != NULL )
 	{
 		argv[ argv_index ] = ( char * ) malloc( strlen( curArg ) );
 		strcpy (argv[ argv_index++ ], curArg);
-		curArg = strtok(NULL, " \n");
+		curArg = strtok(NULL, "= \n");
 	} 
 	argv[argv_index] = NULL;
 	return argv;
@@ -73,7 +73,17 @@ void runCommand(char * command, char **envp)
 		return;
 	else if (strcmp( command , "exit") == 0 || strcmp( command , "quit") == 0)
 		exit(0);
-	else if( access( argv[0], F_OK) != -1 )	
+	else if (strcmp( command , "set") == 0) 
+	{
+		setenv( argv[1], argv[2], 1 );
+		printf("set %s to %s\n", argv[1], argv[2]);
+
+
+		/*strcpy( argv[0], "export" );
+		getAbsolute( argv, envp );
+		runExec( argv, envp );*/
+	}
+	else if( access( argv[0], F_OK) != -1 && argv[0][0] == '/')	
 		runExec( argv, envp );
 	else if( getAbsolute( argv, envp ) )
 		runExec( argv, envp );
