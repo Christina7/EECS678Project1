@@ -45,9 +45,9 @@ void runExec( char ** argv, char ** envp )
 
 char getAbsolute(char ** argv, char ** envp)
 {
-	char * pathIndex;
-	pathIndex = strtok(getenv("PATH"),":\n");
-
+	char * fullPath = malloc(10000);
+        strcpy(fullPath, getenv("PATH"));
+	char * pathIndex = strtok(fullPath,":\n");
 	while(pathIndex != NULL){
 		char absPath[100];
 		strcpy(absPath, pathIndex);
@@ -76,7 +76,7 @@ void runCommand(char * command, char **envp)
 	else if( getAbsolute( argv, envp ) )
 		runExec( argv, envp );
 	else
-		printf("Could not find %s.  Length is %i, first char is %i\n", command, strlen(command), command[0]);
+		printf("Could not find %s.  Length is %i, first char is %i\n", argv[0], strlen(argv[0]), argv[0][0]);
 	
 }
 
