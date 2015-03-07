@@ -97,7 +97,8 @@ void runCommand(char * command, char **envp)
 	else if( getAbsolute( argv, envp ) )
 		runExec( argv, envp );
 	else
-		printf("Could not find %s.  Length is %i, first char is %i\n", argv[0], strlen(argv[0]), argv[0][0]);
+		printf("Could not find %s in PATH.\n", argv[0], strlen(argv[0]), argv[0][0]);
+		//printf("Could not find %s.  Length is %i, first char is %i\n", argv[0], strlen(argv[0]), argv[0][0]);
 	
 }
 
