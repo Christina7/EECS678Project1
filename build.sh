@@ -1,2 +1,2 @@
 #!/bin/bash
-gcc main.c -o quash
+gcc do.c -o quash

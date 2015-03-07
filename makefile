@@ -1,5 +1,5 @@
-quash: main.c
-	gcc -g main.c -o quash
+quash: quash.c
+	gcc -g quash.c -o quash
 clean:
 	rm -f *~ *.o
 
