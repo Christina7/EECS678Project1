@@ -10,12 +10,34 @@
 #define BG_PROCESS_LIMIT 100
 
 int	bgProcesses[BG_PROCESS_LIMIT];
-int	bgProcessIndex = 0;
+int	bgProcessIndex = 1;
 
 struct shellfeatures
 {
 	int inBackground;
 };
+
+void addJob( int pid )
+{
+	bgProcesses[ bgProcessIndex++ ] = pid;
+}
+
+void jobComplete()
+{
+	int status;
+	int job_pid = waitpid(WAIT_ANY, &status, WNOHANG | WUNTRACED);
+	int i;
+	for( i = 0; i < bgProcessIndex; i++ )
+		if( bgProcesses[i] == job_pid )
+		{
+			printf("[%i] %i finished COMMAND\n", i, job_pid);
+			bgProcesses[i] = 0;
+			if( i + 1 == bgProcessIndex )
+				bgProcessIndex--;
+			return;
+		}
+}
+
 
 char * readCommand()
 {
@@ -46,18 +68,12 @@ char ** getArgv( char * command, struct shellfeatures * shellFeatures)
 	return argv;
 }
 
-void storeBackgroundChild( int pid )
-{
-	bgProcesses[ bgProcessIndex++ ] = pid;
-}
 
 void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures )
 {
 		int child_pid = fork();
 		if( child_pid == 0 )
 		{
-			if ( shellFeatures->inBackground )
-				storeBackgroundChild( child_pid );
 			if( execve(argv[0], argv, envp) < 0 )
 			{
 				if ( shellFeatures->inBackground )
@@ -73,7 +89,10 @@ void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures )
 		else if ( ! shellFeatures->inBackground ) 
 			wait(NULL);
 		else
+		{
+			addJob( child_pid );
 			printf("[JOBID] %i running in background\n", child_pid);
+		}
 
 }
 
@@ -137,13 +156,6 @@ void runCommand(char * command, char **envp)
 	
 }
 
-void jobComplete()
-{
-	int status;
-	int job_pid = waitpid(WAIT_ANY, &status, WNOHANG | WUNTRACED);
-	printf("Job is done.\n");
-	printf("[%i] PID finished COMMAND\n", job_pid);
-}
 
 int main(int argc, char * argv[], char **envp) 
 {
