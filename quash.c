@@ -83,6 +83,15 @@ void runCommand(char * command, char **envp)
 		getAbsolute( argv, envp );
 		runExec( argv, envp );*/
 	}
+	else if (strcmp( command , "cd") == 0) 
+	{
+		chdir(
+				argv[1] == NULL?
+					getenv("HOME")
+			:
+				argv[1]
+		     );
+	}
 	else if( access( argv[0], F_OK) != -1 && argv[0][0] == '/')	
 		runExec( argv, envp );
 	else if( getAbsolute( argv, envp ) )
