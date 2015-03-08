@@ -87,7 +87,7 @@ void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures, 
 			{
 				FILE* inFile = fopen( shellFeatures->inFile, "r");
 				dup2(fileno(inFile), fileno(stdin));
-				fclose(inFile);
+		//		fclose(inFile);
 			}
 
 			if( shellFeatures->outFile )
