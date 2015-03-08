@@ -16,6 +16,8 @@ char *  bgCommands[BG_PROCESS_LIMIT];
 struct shellfeatures
 {
 	int inBackground;
+	char * outFile;
+	char * inFile;
 };
 
 void addJob( int pid, char * command )
@@ -60,7 +62,11 @@ char ** getArgv( char * command, struct shellfeatures * shellFeatures)
 
 		if (strcmp(curArg, "&") == 0) 
 			shellFeatures->inBackground = 1;
-		else			
+		else if (strcmp(curArg, "<") == 0) 
+			shellFeatures->inFile = strtok(NULL, " =\n");
+		else if (strcmp(curArg, ">") == 0) 
+			shellFeatures->outFile = strtok(NULL, " =\n");
+		else
 		{
 			argv[ argv_index ] = ( char * ) malloc( strlen( curArg ) );
 			strcpy (argv[ argv_index++ ], curArg);
@@ -77,15 +83,26 @@ void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures, 
 		int child_pid = fork();
 		if( child_pid == 0 )
 		{
+			if( shellFeatures->inFile )
+			{
+				FILE* inFile = fopen( shellFeatures->inFile, "r");
+				dup2(fileno(inFile), fileno(stdin));
+				fclose(inFile);
+			}
+
+			if( shellFeatures->outFile )
+			{
+				FILE* outFile = fopen( shellFeatures->outFile, "w+");
+				dup2(fileno(outFile), fileno(stdout));
+				fclose(outFile);
+			}
+
 			if( execve(argv[0], argv, envp) < 0 )
 			{
 				if ( shellFeatures->inBackground )
-					printf("[JOBID] PID finished COMMAND abnormally\n");
 				exit(1);		
 			}
 			else
-		//		if ( shellFeatures->inBackground )
-		//			printf("[JOBID] PID finished COMMAND\n");
 				exit(0);
 
 		}
