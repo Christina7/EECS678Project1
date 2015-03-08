@@ -19,6 +19,7 @@ struct shellfeatures
 	char * outFile;
 	char * inFile;
 	char ** pipedCommand;
+	int pipeEnabled;
 };
 
 void addJob( int pid, char * command )
@@ -69,11 +70,17 @@ char ** getArgv( char * command, struct shellfeatures * shellFeatures)
 		else if (strcmp(curArg, ">") == 0) 
 			shellFeatures->outFile = strtok(NULL, " =\n");
 		else if (strcmp(curArg, "|") == 0) 
+		{
 			curArgBuf = shellFeatures->pipedCommand;
+			shellFeatures->pipeEnabled = 1;
+			argv_index = 0;
+
+		}
+
 		else
 		{
-			argv[ argv_index ] = ( char * ) malloc( strlen( curArg ) );
-			strcpy (argv[ argv_index++ ], curArg);
+			curArgBuf[ argv_index ] = ( char * ) malloc( strlen( curArg ) );
+			strcpy (curArgBuf[ argv_index++ ], curArg);
 		}
 		curArg = strtok(NULL, "= \n");
 	} 
@@ -82,11 +89,20 @@ char ** getArgv( char * command, struct shellfeatures * shellFeatures)
 }
 
 
-void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures, char * command, int in_fd, int out_fd )
+void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures, char * command, int in_fd, int out_fd, int not_in_fd, int not_out_fd , int pipe_enabled)
 {
 		int child_pid = fork();
 		if( child_pid == 0 )
 		{
+			if( pipe_enabled)
+			{
+				close( not_in_fd  );
+				close( not_out_fd );
+				if( fileno(stdout) != out_fd )
+					dup2( out_fd, fileno(stdout));	
+				else
+					dup2( in_fd, fileno(stdin));
+			}
 
 			if( shellFeatures->inFile )
 			{
@@ -148,16 +164,16 @@ void runCommand(char * command, char **envp)
 {
 	struct shellfeatures * shellFeatures = ( struct shellfeatures * ) malloc( sizeof( struct shellfeatures ) );
 	shellFeatures->pipedCommand = (char**) malloc(ARG_LIMIT + 1);
+	shellFeatures->pipeEnabled = 0;
 	char ** argv = getArgv( command, shellFeatures );
 	
 	int filedesc[2];
 	int in_fd = fileno(stdin);
 	int out_fd = fileno(stdout);
-	if( shellFeatures->pipedCommand )
+	if( shellFeatures->pipeEnabled )
 	{
 		pipe(filedesc);
 		out_fd = filedesc[1];
-		printf("there will be a pipe");
 	}
 	if( strcmp( command, "\n" ) == 0 )
 		return;
@@ -197,21 +213,21 @@ void runCommand(char * command, char **envp)
 		}*/
 	}
 	else if( access( argv[0], F_OK) != -1 && argv[0][0] == '/')	
-		runExec( argv, envp, shellFeatures, command, in_fd, out_fd);
+		runExec( argv, envp, shellFeatures, command, in_fd, out_fd, filedesc[0], fileno(stdout), shellFeatures->pipeEnabled );
 	else if( getAbsolute( argv, envp ) )
-		runExec( argv, envp, shellFeatures, command, in_fd, out_fd );
+		runExec( argv, envp, shellFeatures, command, in_fd, out_fd , filedesc[0], fileno(stdout), shellFeatures->pipeEnabled);
 	else
 		printf("Could not find %s in PATH.\n", argv[0], strlen(argv[0]), argv[0][0]);
 
-	if( shellFeatures->pipedCommand )
+	if( shellFeatures->pipeEnabled )
 	{
 		in_fd = filedesc[0]; 
 		out_fd = fileno(stdout);
 		argv = shellFeatures->pipedCommand;
 		if( access( argv[0], F_OK) != -1 && argv[0][0] == '/')	
-			runExec( argv, envp, shellFeatures, command, in_fd, out_fd );
+			runExec( argv, envp, shellFeatures, command, in_fd, out_fd, fileno(stdin) , filedesc[1],shellFeatures->pipeEnabled );
 		else if( getAbsolute( argv, envp ) )
-			runExec( argv, envp, shellFeatures, command, in_fd, out_fd );
+			runExec( argv, envp, shellFeatures, command, in_fd, out_fd , fileno(stdin), filedesc[1],shellFeatures->pipeEnabled );
 
 	}		
 	
