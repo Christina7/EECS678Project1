@@ -11,15 +11,17 @@
 
 int	bgProcesses[BG_PROCESS_LIMIT];
 int	bgProcessIndex = 1;
+char *  bgCommands[BG_PROCESS_LIMIT];
 
 struct shellfeatures
 {
 	int inBackground;
 };
 
-void addJob( int pid )
+void addJob( int pid, char * command )
 {
-	bgProcesses[ bgProcessIndex++ ] = pid;
+	bgProcesses[ bgProcessIndex ] = pid;
+	bgCommands[ bgProcessIndex++ ] = strdup( command );
 }
 
 void jobComplete()
@@ -30,7 +32,7 @@ void jobComplete()
 	for( i = 0; i < bgProcessIndex; i++ )
 		if( bgProcesses[i] == job_pid )
 		{
-			printf("[%i] %i finished COMMAND\n", i, job_pid);
+			printf("[%i] %i finished %s\n", i, job_pid, bgCommands[i] );
 			bgProcesses[i] = 0;
 			if( i + 1 == bgProcessIndex )
 				bgProcessIndex--;
@@ -49,7 +51,8 @@ char * readCommand()
 
 char ** getArgv( char * command, struct shellfeatures * shellFeatures)
 {
-	char * curArg = strtok(command, "= \n");
+	char * command_tmp = strdup( command );
+	char * curArg = strtok(command_tmp, "= \n");
 	char ** argv = (char**) malloc(ARG_LIMIT + 1);
 	int argv_index = 0;
 	while( curArg != NULL )
@@ -69,7 +72,7 @@ char ** getArgv( char * command, struct shellfeatures * shellFeatures)
 }
 
 
-void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures )
+void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures, char * command )
 {
 		int child_pid = fork();
 		if( child_pid == 0 )
@@ -90,7 +93,7 @@ void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures )
 			wait(NULL);
 		else
 		{
-			addJob( child_pid );
+			addJob( child_pid, command );
 			printf("[JOBID] %i running in background\n", child_pid);
 		}
 
@@ -146,10 +149,24 @@ void runCommand(char * command, char **envp)
 				argv[1]
 		     );
 	}
+	else if (strcmp( argv[0] , "jobs") == 0)
+	{
+		int i;
+		for(i = 0; i < bgProcessIndex; i++) {
+			if(bgProcesses[i])
+			{
+				printf("[%i] %i %s\n", i, bgProcesses[i], "command");
+			}
+		}
+
+/*		if(nobackground) {
+			printf("No background processes running\n");
+		}*/
+	}
 	else if( access( argv[0], F_OK) != -1 && argv[0][0] == '/')	
-		runExec( argv, envp, shellFeatures );
+		runExec( argv, envp, shellFeatures, command);
 	else if( getAbsolute( argv, envp ) )
-		runExec( argv, envp, shellFeatures );
+		runExec( argv, envp, shellFeatures, command );
 	else
 		printf("Could not find %s in PATH.\n", argv[0], strlen(argv[0]), argv[0][0]);
 		//printf("Could not find %s.  Length is %i, first char is %i\n", argv[0], strlen(argv[0]), argv[0][0]);
