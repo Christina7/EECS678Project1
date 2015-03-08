@@ -166,7 +166,8 @@ void runCommand(char * command, char **envp)
 	shellFeatures->pipedCommand = (char**) malloc(ARG_LIMIT + 1);
 	shellFeatures->pipeEnabled = 0;
 	char ** argv = getArgv( command, shellFeatures );
-	
+	if( argv[0] == NULL )
+		exit(0);
 	int filedesc[2];
 	int in_fd = fileno(stdin);
 	int out_fd = fileno(stdout);
@@ -177,7 +178,7 @@ void runCommand(char * command, char **envp)
 	}
 	if( strcmp( command, "\n" ) == 0 )
 		return;
-	else if (strcmp( argv[0] , "exit") == 0 || strcmp( argv[0] , "quit") == 0)
+	else if (strcmp( command , "exit") == 0 || strcmp( argv[0] , "quit") == 0)
 		exit(0);
 	else if (strcmp( argv[0] , "set") == 0) 
 	{
@@ -235,9 +236,17 @@ void runCommand(char * command, char **envp)
 	
 }
 
+void readFromFileInstead(char * fname)
+{
+	FILE  * inFile = fopen( fname, "r");
+	dup2(fileno(inFile), fileno( stdin ));
+}
+
 
 int main(int argc, char * argv[], char **envp) 
 {
+	if( argv[1] != NULL && strcmp( argv[1], "<" ) == 0)
+		readFromFileInstead(argv[2]);
 	char * currentCommand;
 	signal(SIGCHLD, jobComplete);	
 	int i = 0;
