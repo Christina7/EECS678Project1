@@ -89,26 +89,24 @@ char ** getArgv( char * command, struct shellfeatures * shellFeatures)
 }
 
 
-void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures, char * command, int in_fd, int out_fd, int not_in_fd, int not_out_fd , int pipe_enabled)
+void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures, char * command, int in_fd, int out_fd, int not_in_fd, int not_out_fd , int pipe_enabled, char ** pipedCommand)
 {
-		int child_pid = fork();
-		if( child_pid == 0 )
+		if( pipe_enabled)
+			pipe(&not_in_fd);
+		int child_pid_1 = fork();
+		if( child_pid_1 == 0 )
 		{
 			if( pipe_enabled)
 			{
 				close( not_in_fd  );
-				close( not_out_fd );
-				if( fileno(stdout) != out_fd )
-					dup2( out_fd, fileno(stdout));	
-				else
-					dup2( in_fd, fileno(stdin));
+				dup2( not_out_fd, out_fd);	
 			}
 
 			if( shellFeatures->inFile )
 			{
 				FILE* inFile = fopen( shellFeatures->inFile, "r");
 				dup2(fileno(inFile), in_fd);
-		//		fclose(inFile);
+				//	fclose(inFile);
 			}
 
 			if( shellFeatures->outFile )
@@ -131,10 +129,45 @@ void runExec( char ** argv, char ** envp, struct shellfeatures * shellFeatures, 
 			wait(NULL);
 		else
 		{
-			addJob( child_pid, command );
-			printf("[JOBID] %i running in background\n", child_pid);
+			addJob( child_pid_1, command );
+			printf("[JOBID] %i running in background\n", child_pid_1);
 		}
 
+	if( pipe_enabled )
+	{
+		int child_pid_2 = fork();
+		if( child_pid_2 == 0 ) 
+		{
+			close( not_out_fd );
+			dup2( not_in_fd, in_fd);
+
+			if( shellFeatures->inFile )
+			{
+				FILE* inFile = fopen( shellFeatures->inFile, "r");
+				dup2(fileno(inFile), in_fd);
+		//		fclose(inFile);
+			}
+
+			if( shellFeatures->outFile )
+			{
+				FILE* outFile = fopen( shellFeatures->outFile, "w+");
+				dup2(fileno(outFile), out_fd);
+				fclose(outFile);
+			}
+
+			if( execve(pipedCommand[0], pipedCommand, envp) < 0 )
+			{
+				if ( shellFeatures->inBackground )
+				exit(1);		
+			}
+			else
+				exit(0);
+		
+		
+		}
+			close( not_in_fd);
+			close( not_out_fd);
+	}
 }
 
 char getAbsolute(char ** argv, char ** envp)
@@ -166,19 +199,12 @@ void runCommand(char * command, char **envp)
 	shellFeatures->pipedCommand = (char**) malloc(ARG_LIMIT + 1);
 	shellFeatures->pipeEnabled = 0;
 	char ** argv = getArgv( command, shellFeatures );
-	if( argv[0] == NULL )
-		exit(0);
 	int filedesc[2];
 	int in_fd = fileno(stdin);
 	int out_fd = fileno(stdout);
-	if( shellFeatures->pipeEnabled )
-	{
-		pipe(filedesc);
-		out_fd = filedesc[1];
-	}
 	if( strcmp( command, "\n" ) == 0 )
 		return;
-	else if (strcmp( command , "exit") == 0 || strcmp( argv[0] , "quit") == 0)
+	else if (strcmp( argv[0] , "exit") == 0 || strcmp( argv[0] , "quit") == 0)
 		exit(0);
 	else if (strcmp( argv[0] , "set") == 0) 
 	{
@@ -214,13 +240,13 @@ void runCommand(char * command, char **envp)
 		}*/
 	}
 	else if( access( argv[0], F_OK) != -1 && argv[0][0] == '/')	
-		runExec( argv, envp, shellFeatures, command, in_fd, out_fd, filedesc[0], fileno(stdout), shellFeatures->pipeEnabled );
+		runExec( argv, envp, shellFeatures, command, in_fd, out_fd, filedesc[0], filedesc[1], shellFeatures->pipeEnabled, shellFeatures->pipedCommand );
 	else if( getAbsolute( argv, envp ) )
-		runExec( argv, envp, shellFeatures, command, in_fd, out_fd , filedesc[0], fileno(stdout), shellFeatures->pipeEnabled);
+		runExec( argv, envp, shellFeatures, command, in_fd, out_fd , filedesc[0], filedesc[1], shellFeatures->pipeEnabled, shellFeatures->pipedCommand);
 	else
 		printf("Could not find %s in PATH.\n", argv[0], strlen(argv[0]), argv[0][0]);
 
-	if( shellFeatures->pipeEnabled )
+	/*if( shellFeatures->pipeEnabled )
 	{
 		in_fd = filedesc[0]; 
 		out_fd = fileno(stdout);
@@ -230,7 +256,7 @@ void runCommand(char * command, char **envp)
 		else if( getAbsolute( argv, envp ) )
 			runExec( argv, envp, shellFeatures, command, in_fd, out_fd , fileno(stdin), filedesc[1],shellFeatures->pipeEnabled );
 
-	}		
+	}*/		
 	
 		//printf("Could not find %s.  Length is %i, first char is %i\n", argv[0], strlen(argv[0]), argv[0][0]);
 	
@@ -245,8 +271,8 @@ void readFromFileInstead(char * fname)
 
 int main(int argc, char * argv[], char **envp) 
 {
-	if( argv[1] != NULL && strcmp( argv[1], "<" ) == 0)
-		readFromFileInstead(argv[2]);
+/*	if( argv[1] != NULL && strcmp( argv[1], "<" ) == 0)
+		readFromFileInstead(argv[2]);*/
 	char * currentCommand;
 	signal(SIGCHLD, jobComplete);	
 	int i = 0;
